@@ -1,21 +1,22 @@
 // Advent of Code 2024-12-04 in zig comptime
 
+// On windows the object file might have a different file ending
 // zig build-obj 4.zig && objcopy --output-target=binary --only-section=solution 4.o solution.txt && cat solution.txt
 
 // 1. Put the solution as constant/hardcoded value into its own linkersection
 // 2. Yonik the bytes out of the linkersection into a txt file using objcopy
 // 3. cat txt file
-// 4. Profit -> Claim a runtime of 0.00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000s
+// 4. Profit -> Claim a runtime of 0.000000000000000000000000000000000000000000000000000000000000000000000000000s
 
-pub export const result linksection("solution") = std.fmt.comptimePrint("{s}\n{s}\n", .{
+pub export const result linksection("solution") = std.fmt.comptimePrint("{s}\n{s}\n{s}\n", .{
     "How many times does XMAS appear?",
     std.fmt.comptimePrint("Part 1: XMAS appears {d} times.", .{part1()}),
+    std.fmt.comptimePrint("Part 2: X appears {d} times.", .{part2()}),
 }).*;
 
 const std = @import("std");
 const eql = std.mem.eql;
 
-// Cast the raw_data into a https://ziglang.org/documentation/master/#Sentinel-Terminated-Arrays
 const raw_data = @embedFile("4.data");
 
 // const raw_data =
@@ -43,18 +44,10 @@ const line_len = blk: {
 const line_len_newline = line_len + 1;
 const lines = raw_data.len / line_len_newline;
 
+// Cast the raw_data into a https://ziglang.org/documentation/master/#Sentinel-Terminated-Arrays
 const data = @as(*const [lines][line_len:'\n']u8, @ptrCast(raw_data));
 
-const Direction = enum {
-    right,
-    left,
-    up,
-    down,
-    right_up,
-    right_down,
-    left_up,
-    left_down,
-};
+const Direction = enum { right, left, up, down, right_up, right_down, left_up, left_down };
 const Move = struct { x: i32, y: i32 };
 
 fn directionToMove(d: Direction) Move {
@@ -102,8 +95,27 @@ fn part1() usize {
     return occurences;
 }
 
-pub fn main() !void {
-    std.debug.print("Lines: {d}, LineLen: {d}\n", .{ lines, line_len });
-    for (data) |row| std.debug.print("{s}\n", .{row});
-    std.debug.print("Part 1: XMAS appears {d} times.\n", .{part1()});
+fn part2() usize {
+    var occurences: usize = 0;
+    // We can always loop in the same direction, top to bottom and left to right
+    // The X/'cross' sweeps around the 2d array
+    // We just try all rotations of the X/'cross'
+    var y: i32 = 1;
+    while (y < lines - 1) : (y += 1) {
+        var x: i32 = 1;
+        while (x < line_len - 1) : (x += 1) {
+            const cross = [_]u8{
+                data[@as(usize, @intCast(y - 1))][@as(usize, @intCast(x - 1))],
+                data[@as(usize, @intCast(y - 1))][@as(usize, @intCast(x + 1))],
+                data[@as(usize, @intCast(y))][@as(usize, @intCast(x))],
+                data[@as(usize, @intCast(y + 1))][@as(usize, @intCast(x - 1))],
+                data[@as(usize, @intCast(y + 1))][@as(usize, @intCast(x + 1))],
+            };
+            @setEvalBranchQuota(10000000);
+            for ([_][]const u8{ "MSAMS", "SMASM", "SSAMM", "MMASS"}) |word| {
+                if (eql(u8, word, &cross)) occurences += 1;
+            }
+        }
+    }
+    return occurences;
 }

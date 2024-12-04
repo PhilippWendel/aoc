@@ -19,23 +19,9 @@ const eql = std.mem.eql;
 
 const raw_data = @embedFile("4.data");
 
-// const raw_data =
-//     \\MMMSXXMASM
-//     \\MSAMXMSMSA
-//     \\AMXSXMAAMM
-//     \\MSAMASMSMX
-//     \\XMASAMXAMM
-//     \\XXAMMXXAMA
-//     \\SMSMSASXSS
-//     \\SAXAMASAAA
-//     \\MAMMMXMMMM
-//     \\MXMXAXMASX
-//     \\
-// ;
-
 // Len without newline
 const line_len = blk: {
-    var len: usize = 0;
+    var len: i32 = 0;
     for (raw_data) |c| {
         if (c == '\n') break else len += 1;
     }
@@ -49,7 +35,6 @@ const data = @as(*const [lines][line_len:'\n']u8, @ptrCast(raw_data));
 
 const Direction = enum { right, left, up, down, right_up, right_down, left_up, left_down };
 const Move = struct { x: i32, y: i32 };
-
 fn directionToMove(d: Direction) Move {
     return switch (d) {
         .right => .{ .x = 1, .y = 0 },
@@ -63,30 +48,32 @@ fn directionToMove(d: Direction) Move {
     };
 }
 
+fn at(y: i32, x: i32) u8 {
+    return data[@as(usize, @intCast(y))][@as(usize, @intCast(x))];
+}
+fn offset(word: []const u8, on: bool) i32 {
+    return if (on) word.len - 1 else 0;
+}
+// We can always loop in the same direction, top to bottom and left to right
+// Imagine 'bytes' as a vector pointing in the direction
+// We just move the end of the vector around while respecting the array bounds
 fn part1() usize {
-    const word = "XMAS";
-    const word_offset = word.len - 1;
+    const w = "XMAS";
     var occurences: usize = 0;
     inline for (std.meta.tags(Direction)) |d| {
         const m = directionToMove(d);
-        var y: i32 = if (m.y == -1) word_offset else 0;
-        const endXOffset = if (m.x == 1) word_offset else 0;
-        const endYOffset = if (m.y == 1) word_offset else 0;
-
-        // We can always loop in the same direction, top to bottom and left to right
-        // Imagine 'bytes' as a vector pointing in the direction
-        // We just move the end of the vector around while respecting the array bounds
-        while (y < lines - endYOffset) : (y += 1) {
-            var x: i32 = if (m.x == -1) word_offset else 0;
-            while (x < line_len - endXOffset) : (x += 1) {
+        inline for (offset(w, m.y == -1)..lines - offset(w, m.y == 1)) |yu| {
+            const y = @as(i32, @intCast(yu));
+            inline for (offset(w, m.x == -1)..line_len - offset(w, m.x == 1)) |xu| {
+                const x = @as(i32, @intCast(xu));
                 const bytes = [_]u8{
-                    data[@as(usize, @intCast(y + 0 * m.y))][@as(usize, @intCast(x + 0 * m.x))],
-                    data[@as(usize, @intCast(y + 1 * m.y))][@as(usize, @intCast(x + 1 * m.x))],
-                    data[@as(usize, @intCast(y + 2 * m.y))][@as(usize, @intCast(x + 2 * m.x))],
-                    data[@as(usize, @intCast(y + 3 * m.y))][@as(usize, @intCast(x + 3 * m.x))],
+                    at(y + 0 * m.y, x + 0 * m.x),
+                    at(y + 1 * m.y, x + 1 * m.x),
+                    at(y + 2 * m.y, x + 2 * m.x),
+                    at(y + 3 * m.y, x + 3 * m.x),
                 };
                 @setEvalBranchQuota(10000000);
-                if (eql(u8, word, &bytes)) {
+                if (eql(u8, w, &bytes)) {
                     occurences += 1;
                 }
             }
@@ -95,25 +82,26 @@ fn part1() usize {
     return occurences;
 }
 
+// We can always loop in the same direction, top to bottom and left to right
+// The X/'cross' sweeps around the 2d array
+// We just try all rotations of the X/'cross'
 fn part2() usize {
     var occurences: usize = 0;
-    // We can always loop in the same direction, top to bottom and left to right
-    // The X/'cross' sweeps around the 2d array
-    // We just try all rotations of the X/'cross'
-    var y: i32 = 1;
-    while (y < lines - 1) : (y += 1) {
-        var x: i32 = 1;
-        while (x < line_len - 1) : (x += 1) {
+    inline for (1..lines - 1) |y| {
+        inline for (1..line_len - 1) |x| {
             const cross = [_]u8{
-                data[@as(usize, @intCast(y - 1))][@as(usize, @intCast(x - 1))],
-                data[@as(usize, @intCast(y - 1))][@as(usize, @intCast(x + 1))],
-                data[@as(usize, @intCast(y))][@as(usize, @intCast(x))],
-                data[@as(usize, @intCast(y + 1))][@as(usize, @intCast(x - 1))],
-                data[@as(usize, @intCast(y + 1))][@as(usize, @intCast(x + 1))],
+                data[y - 1][x - 1],
+                data[y - 1][x + 1],
+                data[y][x],
+                data[y + 1][x - 1],
+                data[y + 1][x + 1],
             };
             @setEvalBranchQuota(10000000);
-            for ([_][]const u8{ "MSAMS", "SMASM", "SSAMM", "MMASS"}) |word| {
-                if (eql(u8, word, &cross)) occurences += 1;
+            for ([_][]const u8{ "MSAMS", "SMASM", "SSAMM", "MMASS" }) |w| {
+                if (eql(u8, w, &cross)) {
+                    occurences += 1;
+                    break;
+                }
             }
         }
     }

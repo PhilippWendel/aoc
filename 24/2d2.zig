@@ -49,11 +49,9 @@ const Report = struct {
         if (s.all_safe()) return true;
         const items = s.list_of_levels.items;
         return for (0..items.len) |i| {
-            var temp = try std.ArrayList(i32).initCapacity(std.heap.page_allocator, items.len - 1);
+            var temp = try s.list_of_levels.clone();
             defer temp.deinit();
-            for (0..items.len) |j| {
-                if (i != j) try temp.append(items[j]);
-            }
+            _ = temp.orderedRemove(i);
             if ((Report{ .list_of_levels = temp }).all_safe()) break true;
         } else false;
     }

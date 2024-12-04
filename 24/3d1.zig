@@ -11,7 +11,7 @@ pub fn main() !void {
 
     const min_op_len = 3 + 2 + 2 + 1; // mul () XY ,
     // 2. Parse
-// Check for off by one or more error
+    // Check for off by one or more error
     for (0..(data.len - min_op_len)) |offset| {
         const pos = data[offset..];
 

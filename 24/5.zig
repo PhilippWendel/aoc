@@ -11,7 +11,7 @@ const MAX_U32 = std.math.maxInt(u32);
 const day = comptimePrint("{any}", .{@This()});
 
 const newline = "\n";
-const input = @embedFile(day ++ if (false) ".data" else ".input");
+const input = @embedFile(day ++ if (true) ".data" else ".input");
 
 pub export const result linksection("solution") = comptimePrint("{s}\n{s}\n{s}\n", .{
     "Day 5",

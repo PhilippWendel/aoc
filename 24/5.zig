@@ -7,7 +7,6 @@ const comptimePrint = std.fmt.comptimePrint;
 const parseInt = std.fmt.parseInt;
 const zeroes = std.mem.zeroes;
 
-const MAX_U32 = std.math.maxInt(u32);
 const day = comptimePrint("{any}", .{@This()});
 
 const newline = "\n";
@@ -31,7 +30,7 @@ const raw_data = blk: {
 
 const OrderingRule = struct { l: u32, r: u32 };
 const SafetyManual = []u32;
-const Data = struct { ordering_rules: []const OrderingRule, safety_manuals: []const SafetyManual };
+// const Data = struct { ordering_rules: []const OrderingRule, safety_manuals: []const SafetyManual };
 const data = blk: {
     @setEvalBranchQuota(std.math.maxInt(u32));
     var ordering_rules = std.mem.zeroes([count(u8, raw_data.ordering_rules, newline)]OrderingRule);
@@ -50,12 +49,12 @@ const data = blk: {
         var pages = std.mem.zeroes([count(u8, manuals.peek().?, ",") + 1]u32);
         var page = std.mem.tokenizeScalar(u8, manuals.next().?, ',');
         for (0..pages.len) |j| {
-            pages[j] = parseInt(u32, page.next().?, 10) catch unreachable;
+            const p = parseInt(u32, page.next().?, 10) catch unreachable;
+            pages[j] = p;
         }
         safety_manuals[i] = pages[0..];
     }
-
-    break :blk Data{ .ordering_rules = ordering_rules[0..], .safety_manuals = &safety_manuals };
+    break :blk .{ .ordering_rules = ordering_rules, .safety_manuals = safety_manuals };
 };
 
 fn part1() usize {

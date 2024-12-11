@@ -5,14 +5,15 @@ const comptimePrint = std.fmt.comptimePrint;
 const day = comptimePrint("{any}", .{@This()});
 const input = @embedFile(day ++ if (false) ".data" else ".input");
 
-pub export const result linksection("solution") = comptimePrint("{s}\n{s}\n{s}\n", .{
-    "Day " ++ day,
-    comptimePrint("Part 1: {d}", .{part1()}),
-    comptimePrint("Part 2: {d}", .{part2()}),
-}).*;
+// pub export const result linksection("solution") = comptimePrint("{s}\n{s}\n{s}\n", .{
+//     "Day " ++ day,
+//     comptimePrint("Part 1: {d}", .{part1()}),
+//     comptimePrint("Part 2: {d}", .{part2()}),
+// }).*;
 
 pub fn main() void {
-    print("{s}", .{result});
+    // print("{s}", .{result});
+    print("{d}\n", .{part2()});
 }
 
 const Guard = enum(u8) {
@@ -124,23 +125,40 @@ fn part2() usize {
     @memcpy(&field, &data);
 
     const guard = field[guardStart.y][guardStart.x];
+    var pos = guardStart;
+
+    @setEvalBranchQuota(std.math.maxInt(u32));
+    while (legalMove(pos, field)) {
+        const current = &field[pos.y][pos.x];
+        const newPos = move(pos, current.*.Guard);
+        const new = &field[newPos.y][newPos.x];
+        if (new.* != .Obstruction) {
+            new.* = current.*;
+            current.* = .Visited;
+            pos = newPos;
+        } else {
+            current.*.Guard = current.*.Guard.rotateRight();
+        }
+    }
+
     const Hit = struct { pos: Pos, dir: Guard, visited: bool };
-    var number_of_new_obstructions = 0;
+    var number_of_new_obstructions: usize = 0;
 
     for (field, 0..) |row, y| {
         for (row, 0..) |state, x| {
             if (state == .Obstruction) continue;
+            if (state == .Unvisited) continue;
             if (guardStart.eq(.{ .x = x, .y = y })) continue;
 
             const old = field[y][x];
             defer field[y][x] = old;
             field[y][x] = .Obstruction;
 
-            var pos = guardStart;
+            pos = guardStart;
             field[guardStart.y][guardStart.x] = guard;
 
             var hits: [lines * line_len]Hit = undefined;
-            var current_obstruction = 0;
+            var current_obstruction: usize = 0;
 
             @setEvalBranchQuota(std.math.maxInt(u32));
             loop: while (legalMove(pos, field)) {
@@ -155,6 +173,8 @@ fn part2() usize {
                     hits[current_obstruction] = .{ .pos = newPos, .dir = dir, .visited = false };
                     current_obstruction += 1;
                     for (hits[0..current_obstruction]) |*hit| {
+    print("{s}", .{""});
+
                         if (hit.*.pos.eq(newPos) and hit.*.dir == dir) {
                             if (hit.*.visited) {
                                 number_of_new_obstructions += 1;
@@ -167,5 +187,6 @@ fn part2() usize {
             }
         }
     }
+
     return number_of_new_obstructions;
 }

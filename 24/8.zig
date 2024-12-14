@@ -43,6 +43,7 @@ pub fn main() !void {
         }
     }
 
+    // Part 1
     var antinodes = std.AutoHashMap(Point, void).init(allocator);
     defer antinodes.deinit();
 
@@ -64,9 +65,37 @@ pub fn main() !void {
             }
         }
     }
-    std.debug.print("{d}\n", .{antinodes.count()});
+
+    // Part 2
+    var antinodes2 = std.AutoHashMap(Point, void).init(allocator);
+    defer antinodes2.deinit();
+
+    var map_it2 = map.valueIterator();
+    while (map_it2.next()) |value| {
+        const positions = value.*.items;
+        for (positions[0 .. positions.len - 1], 0..) |l, i| {
+            for (positions[1 + i ..]) |r| {
+                const distance = l - r;
+                for ([_]Point{ l, r }) |starting_point| {
+                    inline for ([_](fn (Point, Point) Point){ add, sub }) |op| {
+                        var p = op(starting_point, distance);
+                        while (inside(p, pt)) : (p = op(p, distance)) try antinodes2.put(p, {});
+                    }
+                }
+            }
+        }
+    }
+    std.debug.print("Part 1:{d}\nPart 2: {d}\n", .{ antinodes.count(), antinodes2.count() });
 }
 
 fn inside(pos: Point, corner: Point) bool {
     return (0 <= pos[0]) and (pos[0] < corner[0]) and (0 <= pos[1]) and (pos[1] < corner[1]);
+}
+
+fn add(l: Point, r: Point) Point {
+    return l + r;
+}
+
+fn sub(l: Point, r: Point) Point {
+    return l - r;
 }

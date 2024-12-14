@@ -173,7 +173,7 @@ fn part2() usize {
                     hits[current_obstruction] = .{ .pos = newPos, .dir = dir, .visited = false };
                     current_obstruction += 1;
                     for (hits[0..current_obstruction]) |*hit| {
-    print("{s}", .{""});
+                        print("{s}", .{""});
 
                         if (hit.*.pos.eq(newPos) and hit.*.dir == dir) {
                             if (hit.*.visited) {

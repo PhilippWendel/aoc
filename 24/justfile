@@ -1,0 +1,8 @@
+build:
+    # zig build-exe -O ReleaseFast 11.zig
+    # zig build-exe -O ReleaseFast 11-clone.zig
+    # zig build-exe -O ReleaseFast 11-ret.zig
+    zig build-exe -O ReleaseFast 11-arena.zig
+    zig build-exe -O ReleaseFast 11-bufarena.zig
+    # poop ./11 ./11-clone ./11-ret ./11-arena
+    poop ./11-arena ./11-bufarena

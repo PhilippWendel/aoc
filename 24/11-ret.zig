@@ -6,36 +6,33 @@ const raw_data = if (false) "125 17" else @embedFile("11.input");
 pub fn main() !void {
     // Parse
     var stones_iter = std.mem.tokenizeAny(u8, raw_data, " \n");
-    var stones1 = std.AutoHashMap(u64, u64).init(allocator);
-    var stones2 = std.AutoHashMap(u64, u64).init(allocator);
-    defer stones1.deinit();
-    defer stones2.deinit();
+    var stones = std.AutoHashMap(u64, u64).init(allocator);
+    defer stones.deinit();
 
     while (stones_iter.next()) |stone| {
         const key = try std.fmt.parseInt(u64, stone, 10);
-        const old_count = stones1.get(key) orelse 0;
-        try stones1.put(key, old_count + 1);
+        const old_count = stones.get(key) orelse 0;
+        try stones.put(key, old_count + 1);
     }
 
     const blinks = 75;
-    var tick = false;
     for (1..blinks + 1) |i| {
-        const stones = if (tick) &stones1 else &stones2;
-        const stones_old = if (!tick) &stones1 else &stones2;
-        stones.*.clearRetainingCapacity();
-        tick = !tick;
+        const stones_old = try stones.clone();
+        stones.clearRetainingCapacity();
 
-        var keys = stones_old.*.keyIterator();
+        // tick = !tick;
+
+        var keys = stones_old.keyIterator();
         while (keys.next()) |key| {
             const nums = try apply_rules(key.*);
             for (nums) |num| {
                 if (num) |n| {
-                    try stones.put(n, (stones.*.get(n) orelse 0) + stones_old.*.get(key.*).?);
+                    try stones.put(n, (stones.get(n) orelse 0) + stones_old.get(key.*).?);
                 }
             }
         }
         if (i == 25 or i == 75) {
-            var values = stones.*.valueIterator();
+            var values = stones.valueIterator();
             var sum: u64 = 0;
             while (values.next()) |v| sum += v.*;
             std.debug.print("{d}: {d}\n", .{ i, sum });
